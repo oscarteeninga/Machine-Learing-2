@@ -9,5 +9,5 @@ requests==2.18.4
 rsa==3.4.2
 six==1.11.0
 urllib3==1.22
-bayespy==0.5.22
-pomegranate==0.4.0
+pgmpy=00.1.16
+ipywidgets==7.6.5
