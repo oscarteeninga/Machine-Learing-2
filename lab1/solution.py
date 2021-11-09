@@ -9,6 +9,7 @@ from problem import Action, available_actions, Corner, Driver, Experiment, Envir
 
 ALMOST_INFINITE_STEP = 100000
 MAX_LEARNING_STEPS = 500
+EPS = 1e-3
 
 
 class RandomDriver(Driver):
@@ -93,7 +94,8 @@ class OffPolicyNStepSarsaDriver(Driver):
             state_t = self.states[self._access_index(update_step)]
             action_t = self.actions[self._access_index(update_step)]
             b = self.epsilon_greedy_policy(state_t, available_actions(state_t))[action_t]
-            return_value_weight *=
+            p = self.greedy_policy(state_t, available_actions(state_t))[action_t]
+            return_value_weight *= p/b  # chuj wie czy to dobrze
         # TODO: Tutaj trzeba policzyć korektę na różne prawdopodobieństwa ρ (ponieważ uczymy poza-polityką)
         return return_value_weight
 
@@ -111,8 +113,8 @@ class OffPolicyNStepSarsaDriver(Driver):
         return actions[i]
 
     def epsilon_greedy_policy(self, state: State, actions: list[Action]) -> dict[Action, float]:
-        probabilities =
-        # TODO: tutaj trzeba ustalic prawdopodobieństwa wyboru akcji według polityki ε-zachłannej
+        p = random.uniform(0, 1)
+        probabilities = self._greedy_probabilities(state, actions) if p > EPS else self._random_probabilities(actions)
         return {action: probability for action, probability in zip(actions, probabilities)}
 
     def greedy_policy(self, state: State, actions: list[Action]) -> dict[Action, float]:
