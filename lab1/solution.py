@@ -9,7 +9,7 @@ from problem import Action, available_actions, Corner, Driver, Experiment, Envir
 
 ALMOST_INFINITE_STEP = 100000
 MAX_LEARNING_STEPS = 500
-EPS = 1e-4
+EPS = 0.1
 
 
 class RandomDriver(Driver):
@@ -91,11 +91,15 @@ class OffPolicyNStepSarsaDriver(Driver):
     def _return_value_weight(self, update_step):
         return_value_weight = 1.0
         for i in range(update_step + 1, min(update_step + self.step_no, self.final_step)):
-            state_t = self.states[self._access_index(update_step)]
-            action_t = self.actions[self._access_index(update_step)]
+            state_t = self.states[self._access_index(i)]
+            action_t = self.actions[self._access_index(i)]
             b = self.epsilon_greedy_policy(state_t, available_actions(state_t))[action_t]
             p = self.greedy_policy(state_t, available_actions(state_t))[action_t]
-            return_value_weight *= p/b
+            if b > 0:
+                return_value_weight *= p/b
+            else:
+                return_value_weight = 0
+                break
         # TODO: Tutaj trzeba policzyć korektę na różne prawdopodobieństwa ρ (ponieważ uczymy poza-polityką)
         return return_value_weight
 
@@ -151,12 +155,12 @@ def main() -> None:
     experiment = Experiment(
         environment=Environment(
             corner=Corner(
-                name='corner_b'
+                name='corner_c'
             ),
             steering_fail_chance=0.01,
         ),
         driver=OffPolicyNStepSarsaDriver(
-            step_no=5,
+            step_no=10,
             step_size=0.3,
             experiment_rate=0.05,
             discount_factor=1.00,
