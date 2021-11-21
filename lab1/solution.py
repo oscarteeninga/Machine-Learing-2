@@ -95,12 +95,11 @@ class OffPolicyNStepSarsaDriver(Driver):
             action_t = self.actions[self._access_index(i)]
             b = self.epsilon_greedy_policy(state_t, available_actions(state_t))[action_t]
             p = self.greedy_policy(state_t, available_actions(state_t))[action_t]
-            if b > 0:
-                return_value_weight *= p/b
-            else:
+            if p == 0:
                 return_value_weight = 0
                 break
-        # TODO: Tutaj trzeba policzyć korektę na różne prawdopodobieństwa ρ (ponieważ uczymy poza-polityką)
+            else:
+                return_value_weight *= p/b
         return return_value_weight
 
     def finished_learning(self) -> bool:
@@ -161,7 +160,7 @@ def main() -> None:
         ),
         driver=OffPolicyNStepSarsaDriver(
             step_no=10,
-            step_size=0.3,
+            step_size=0.4,
             experiment_rate=0.05,
             discount_factor=1.00,
         ),
