@@ -9,7 +9,6 @@ from problem import Action, available_actions, Corner, Driver, Experiment, Envir
 
 ALMOST_INFINITE_STEP = 100000
 MAX_LEARNING_STEPS = 500
-EPS = 0.1
 
 
 class RandomDriver(Driver):
@@ -73,7 +72,7 @@ class OffPolicyNStepSarsaDriver(Driver):
             if update_step + self.step_no < self.final_step:
                 return_value += pow(self.discount_factor, self.step_no) * self.q[state_t, action_t]
 
-            self.q[state_t, action_t] = self.q[state_t, action_t] + self.experiment_rate * return_value_weight * (
+            self.q[state_t, action_t] = self.q[state_t, action_t] + self.step_size * return_value_weight * (
                         return_value - self.q[state_t, action_t])
 
         if update_step == self.final_step - 1:
@@ -117,7 +116,7 @@ class OffPolicyNStepSarsaDriver(Driver):
 
     def epsilon_greedy_policy(self, state: State, actions: list[Action]) -> dict[Action, float]:
         p = random.uniform(0, 1)
-        probabilities = self._greedy_probabilities(state, actions) if p > EPS else self._random_probabilities(actions)
+        probabilities = self._greedy_probabilities(state, actions) if p > self.experiment_rate else self._random_probabilities(actions)
         return {action: probability for action, probability in zip(actions, probabilities)}
 
     def greedy_policy(self, state: State, actions: list[Action]) -> dict[Action, float]:
@@ -154,7 +153,7 @@ def main() -> None:
     experiment = Experiment(
         environment=Environment(
             corner=Corner(
-                name='corner_c'
+                name='corner_b'
             ),
             steering_fail_chance=0.01,
         ),
