@@ -153,12 +153,15 @@ class Experiment:
     current_episode_no: int = 0
     penalties: Optional[list] = None  # TODO: tutaj będą się gromadzić kary przyznane w kolejnych epizodach
 
-    def run(self) -> None:
+    def run(self) -> float:
         self.penalties = []
+        penalties_mean = 0
         for _ in tqdm(range(self.number_of_episodes)):
             episode_penalty = self._episode()
             self.penalties.append(episode_penalty)
+            penalties_mean += episode_penalty
             self.current_episode_no += 1
+        return penalties_mean/self.number_of_episodes
 
     def _episode(self) -> int:
         positions = []
@@ -169,7 +172,7 @@ class Experiment:
             if car.driver.finished_learning():
                 positions.append(car.position())
                 break
-        self._draw_episode(positions)
+        # self._draw_episode(positions)
         return car.total_penalties
 
     def _draw_episode(self, positions: list[Position]) -> None:
