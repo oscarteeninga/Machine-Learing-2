@@ -172,7 +172,7 @@ class Experiment:
             if car.driver.finished_learning():
                 positions.append(car.position())
                 break
-        # self._draw_episode(positions)
+        self._draw_episode(positions)
         return car.total_penalties
 
     def _draw_episode(self, positions: list[Position]) -> None:
