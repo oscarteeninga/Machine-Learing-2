@@ -51,17 +51,14 @@ class ActorCriticController:
 
         with self.tape:  # to ta sama taśma, które użyliśmy już w fazie wybierania akcji
             # wszystko co dzieje się w kontekście danej taśmy jest zapisywane i może posłużyć do późniejszego wyliczania pożądanych gradientów
-            state_value = self.model(state)[1]
             if not terminal:
-                new_state_value = self.model(new_state)[1]
-                error = reward + self.discount_factor * new_state_value - state_value
+                error = reward + self.discount_factor * float(self.model(new_state)[1].numpy()) - self.model(state)[1]
             else:
-                error = reward - state_value
+                error = reward - self.model(state)[1]
             # TODO: tu trzeba obliczyć błąd wartościowania aktualnego krytyka
             self.last_error_squared = float(error) ** 2
 
-            loss_actor = - error * self.log_action_probability
-            loss = self.last_error_squared + loss_actor
+            loss = self.last_error_squared - float(error.numpy()) * self.log_action_probability
             # TODO: tu trzeba obliczyć sumę strat dla aktora i krytyka
 
         # tu obliczamy gradienty po wagach z naszej straty, pomagają w tym informacje zapisane na taśmie
