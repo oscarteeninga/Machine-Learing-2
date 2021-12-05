@@ -15,21 +15,22 @@ class ActorCriticController:
         self.model: tf.keras.Model = self.create_actor_critic_model()
         self.optimizer: tf.keras.optimizers.Optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         # TODO: przygotuj odpowiedni optymizator, pamiętaj o learning rate!
-        self.log_action_probability: Optional[tf.Tensor] = None  # zmienna pomocnicza, przyda się do obliczania docelowej straty
+        self.log_action_probability: Optional[
+            tf.Tensor] = None  # zmienna pomocnicza, przyda się do obliczania docelowej straty
         self.tape: Optional[tf.GradientTape] = None  # zmienna pomocnicza, związana z działaniem frameworku
         self.last_error_squared: float = 0.0  # zmienna używana do wizualizacji wyników
 
     @staticmethod
     def create_actor_critic_model() -> tf.keras.Model:
-        inputs = tf.keras.layers.Input(4)
-        inputs = tf.keras.layers.Dense(1024, activation='relu')(inputs)
-        inputs = tf.keras.layers.BatchNormalization()(inputs)
-        inputs = tf.keras.layers.Dense(256, activation='relu')(inputs)
-        inputs = tf.keras.layers.BatchNormalization()(inputs)
-        actor_output = tf.keras.layers.Dense(2, activation="softmax")(inputs)
-        critic_output = tf.keras.layers.Dense(2, activation="linear")(inputs)
+        x_in = tf.keras.layers.Input(4)
+        x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dense(256, activation='relu')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        actor_output = tf.keras.layers.Dense(2, activation="softmax")(x)
+        critic_output = tf.keras.layers.Dense(1, activation="linear")(x)
         # TODO: przygotuj potrzebne warstwy sieci neuronowej o odpowiednich aktywacjach i rozmiarach
-        return tf.keras.Model(inputs=inputs, outputs=[actor_output, critic_output])
+        return tf.keras.Model(inputs=x_in, outputs=[actor_output, critic_output])
 
     def choose_action(self, state: np.ndarray) -> int:
         state = self.format_state(state)  # przygotowanie stanu do formatu akceptowanego przez framework
@@ -37,8 +38,10 @@ class ActorCriticController:
         self.tape = tf.GradientTape()
         with self.tape:
             # wszystko co dzieje się w kontekście danej taśmy jest zapisywane i może posłużyć do późniejszego wyliczania pożądanych gradientów
-            action = 1  # TODO: tu trzeba wybrać odpowiednią akcję korzystając z aktora
-            self.log_action_probability = None  # TODO: tu trzeba zapisać do późniejszego wykorzystania logarytm prawdopodobieństwa wybrania uprzednio wybranej akcji (będzie nam potrzebny by policzyć stratę aktora)
+            probabilities = tfp.distributions.Categorical(probs=self.model(state)[0])
+            action, self.log_action_probability = probabilities.experimental_sample_and_log_prob()
+            # TODO: tu trzeba wybrać odpowiednią akcję korzystając z aktora
+            # TODO: tu trzeba zapisać do późniejszego wykorzystania logarytm prawdopodobieństwa wybrania uprzednio wybranej akcji (będzie nam potrzebny by policzyć stratę aktora)
         return int(action)
 
     # noinspection PyTypeChecker
@@ -48,14 +51,23 @@ class ActorCriticController:
 
         with self.tape:  # to ta sama taśma, które użyliśmy już w fazie wybierania akcji
             # wszystko co dzieje się w kontekście danej taśmy jest zapisywane i może posłużyć do późniejszego wyliczania pożądanych gradientów
-
-            error = 0  # TODO: tu trzeba obliczyć błąd wartościowania aktualnego krytyka
+            state_value = self.model(state)[1]
+            if not terminal:
+                new_state_value = self.model(new_state)[1]
+                error = reward + self.discount_factor * new_state_value - state_value
+            else:
+                error = reward - state_value
+            # TODO: tu trzeba obliczyć błąd wartościowania aktualnego krytyka
             self.last_error_squared = float(error) ** 2
 
-            loss = 0  # TODO: tu trzeba obliczyć sumę strat dla aktora i krytyka
+            loss_actor = - error * self.log_action_probability
+            loss = self.last_error_squared + loss_actor
+            # TODO: tu trzeba obliczyć sumę strat dla aktora i krytyka
 
-        gradients = self.tape.gradient(loss, self.model.trainable_weights)  # tu obliczamy gradienty po wagach z naszej straty, pomagają w tym informacje zapisane na taśmie
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))  # tutaj zmieniamy wagi modelu wykonując krok po gradiencie w kierunku minimalizacji straty
+        # tu obliczamy gradienty po wagach z naszej straty, pomagają w tym informacje zapisane na taśmie
+        gradients = self.tape.gradient(loss, self.model.trainable_weights)
+        # tutaj zmieniamy wagi modelu wykonując krok po gradiencie w kierunku minimalizacji straty
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
 
     @staticmethod
     def format_state(state: np.ndarray) -> np.ndarray:
@@ -88,7 +100,7 @@ def main() -> None:
         past_errors.append(np.mean(errors_history))
 
         window_size = 50  # tutaj o rozmiarze okienka od średniej kroczącej
-        if i_episode % 25 == 0:  # tutaj o częstotliwości zrzucania wykresów
+        if i_episode % 100 == 0:  # tutaj o częstotliwości zrzucania wykresów
             if len(past_rewards) >= window_size:
                 fig, axs = plt.subplots(2)
                 axs[0].plot(
@@ -97,7 +109,7 @@ def main() -> None:
                 )
                 axs[0].set_title('mean squared error')
                 axs[1].plot(
-                    [np.mean(past_rewards[i:i+window_size]) for i in range(len(past_rewards) - window_size)],
+                    [np.mean(past_rewards[i:i + window_size]) for i in range(len(past_rewards) - window_size)],
                     'tab:green',
                 )
                 axs[1].set_title('sum of rewards')
