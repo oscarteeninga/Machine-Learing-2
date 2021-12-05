@@ -38,7 +38,7 @@ class ActorCriticController:
         self.tape = tf.GradientTape()
         with self.tape:
             # wszystko co dzieje się w kontekście danej taśmy jest zapisywane i może posłużyć do późniejszego wyliczania pożądanych gradientów
-            probabilities = tfp.distributions.Categorical(probs=self.model(state)[0])
+            probabilities = tfp.distributions.Categorical(probs=self.model(state)[0][0])
             action, self.log_action_probability = probabilities.experimental_sample_and_log_prob()
             # TODO: tu trzeba wybrać odpowiednią akcję korzystając z aktora
             # TODO: tu trzeba zapisać do późniejszego wykorzystania logarytm prawdopodobieństwa wybrania uprzednio wybranej akcji (będzie nam potrzebny by policzyć stratę aktora)
@@ -52,12 +52,11 @@ class ActorCriticController:
         with self.tape:  # to ta sama taśma, które użyliśmy już w fazie wybierania akcji
             # wszystko co dzieje się w kontekście danej taśmy jest zapisywane i może posłużyć do późniejszego wyliczania pożądanych gradientów
             if not terminal:
-                error = reward + self.discount_factor * float(self.model(new_state)[1].numpy()) - self.model(state)[1]
+                error = reward + self.discount_factor * float(self.model(new_state)[1][0].numpy()) - self.model(state)[1][0]
             else:
-                error = reward - self.model(state)[1]
+                error = reward - self.model(state)[1][0]
             # TODO: tu trzeba obliczyć błąd wartościowania aktualnego krytyka
-            self.last_error_squared = float(error) ** 2
-
+            self.last_error_squared = error ** 2
             loss = self.last_error_squared - float(error.numpy()) * self.log_action_probability
             # TODO: tu trzeba obliczyć sumę strat dla aktora i krytyka
 
@@ -84,7 +83,7 @@ def main() -> None:
         errors_history = []
 
         while not done:
-            environment.render()  # tą linijkę możemy wykomentować, jeżeli nie chcemy mieć wizualizacji na żywo
+            # environment.render()  # tą linijkę możemy wykomentować, jeżeli nie chcemy mieć wizualizacji na żywo
 
             action = controller.choose_action(state)
             new_state, reward, done, info = environment.step(action)
