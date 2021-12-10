@@ -22,17 +22,13 @@ class ActorCriticController:
 
     @staticmethod
     def create_actor_critic_model() -> tf.keras.Model:
-        x_in = tf.keras.layers.Input(8)
-        a_x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
-        a_x = tf.keras.layers.LayerNormalization()(a_x)
-        a_x = tf.keras.layers.Dense(256, activation='relu')(a_x)
-        a_x = tf.keras.layers.LayerNormalization()(a_x)
-        actor_output = tf.keras.layers.Dense(4, activation="softmax")(a_x)
-        c_x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
-        c_x = tf.keras.layers.LayerNormalization()(c_x)
-        c_x = tf.keras.layers.Dense(256, activation='relu')(c_x)
-        c_x = tf.keras.layers.LayerNormalization()(c_x)
-        critic_output = tf.keras.layers.Dense(1, activation="linear")(c_x)
+        x_in = tf.keras.layers.Input(4)
+        x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
+        x = tf.keras.layers.LayerNormalization()(x)
+        x = tf.keras.layers.Dense(256, activation='relu')(x)
+        x = tf.keras.layers.LayerNormalization()(x)
+        actor_output = tf.keras.layers.Dense(2, activation="softmax")(x)
+        critic_output = tf.keras.layers.Dense(1, activation="linear")(x)
         # TODO: przygotuj potrzebne warstwy sieci neuronowej o odpowiednich aktywacjach i rozmiarach
         return tf.keras.Model(inputs=x_in, outputs=[actor_output, critic_output])
 
