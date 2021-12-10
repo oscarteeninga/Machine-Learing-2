@@ -22,16 +22,16 @@ class ActorCriticController:
 
     @staticmethod
     def create_actor_critic_model() -> tf.keras.Model:
-        x_in = tf.keras.layers.Input(4)
+        x_in = tf.keras.layers.Input(8)
         a_x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
-        a_x = tf.keras.layers.BatchNormalization()(a_x)
+        a_x = tf.keras.layers.LayerNormalization()(a_x)
         a_x = tf.keras.layers.Dense(256, activation='relu')(a_x)
-        a_x = tf.keras.layers.BatchNormalization()(a_x)
-        actor_output = tf.keras.layers.Dense(2, activation="softmax")(a_x)
+        a_x = tf.keras.layers.LayerNormalization()(a_x)
+        actor_output = tf.keras.layers.Dense(4, activation="softmax")(a_x)
         c_x = tf.keras.layers.Dense(1024, activation='relu')(x_in)
-        c_x = tf.keras.layers.BatchNormalization()(c_x)
+        c_x = tf.keras.layers.LayerNormalization()(c_x)
         c_x = tf.keras.layers.Dense(256, activation='relu')(c_x)
-        c_x = tf.keras.layers.BatchNormalization()(c_x)
+        c_x = tf.keras.layers.LayerNormalization()(c_x)
         critic_output = tf.keras.layers.Dense(1, activation="linear")(c_x)
         # TODO: przygotuj potrzebne warstwy sieci neuronowej o odpowiednich aktywacjach i rozmiarach
         return tf.keras.Model(inputs=x_in, outputs=[actor_output, critic_output])
@@ -75,12 +75,12 @@ class ActorCriticController:
 
 
 def main() -> None:
-    environment = gym.make('CartPole-v1')  # zamień na gym.make('LunarLander-v2') by zająć się lądownikiem
-    controller = ActorCriticController(environment, 0.00001, 0.99)
+    environment = gym.make('LunarLander-v2')  # zamień na gym.make('LunarLander-v2') by zająć się lądownikiem
+    controller = ActorCriticController(environment, 0.000001, 0.99)
 
     past_rewards = []
     past_errors = []
-    for i_episode in tqdm(range(2000)):  # tu decydujemy o liczbie epizodów
+    for i_episode in tqdm(range(3000)):  # tu decydujemy o liczbie epizodów
         done = False
         state = environment.reset()
         reward_sum = 0.0
