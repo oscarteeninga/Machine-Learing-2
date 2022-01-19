@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
 import random
