@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
+import random
 from bayesian_linear_regression import BayesianLinearRegression
 
 
@@ -11,7 +12,8 @@ def generate_points_with_noise(size):
 
 
 def test_dataset():
-    print(generate_points_with_noise(10))
+    Xy = list(zip(*generate_points_with_noise(10)))
+    plt.plot(Xy[0], Xy[1])
 
 
 def test_boston():
