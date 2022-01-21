@@ -11,18 +11,17 @@ class BayesianLinearRegression:
         self.cov = np.identity(n_features) * alpha
 
     def learn(self, x, y):
-        # Update the inverse covariance matrix (
-        # Equation 77
-        # Update the mean vector
-        # Equation 78
-        #
+        cov_inv_prev = np.linalg.inv(self.cov)
+        cov_inv = cov_inv_prev + self.beta * np.outer(x, x)
+        cov = np.linalg.inv(cov_inv)
+        mean = cov @ (cov_inv_prev @ self.mean + self.beta * y * x)
+        self.cov = cov
+        self.mean = mean
         return self
 
     def predict(self, x):
-        # Obtain the predictive mean
-        # Equation 62, Equation 80
-        # Obtain the predictive variance
-        # Equation 81
+        y_pred_mean = x @ self.mean
+        y_pred_var = 1 / self.beta + x @ self.cov @ x.T
         return stats.norm(loc=y_pred_mean, scale=y_pred_var ** .5)
 
     @property
